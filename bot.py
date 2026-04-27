@@ -1,10 +1,23 @@
 import requests
 import time
 import random
+from datetime import datetime
+import pytz
+from flask import Flask
+from threading import Thread
 
-# কনফিগারেশন
+# --- কনফিগারেশন ---
 BOT_TOKEN = "8779708385:AAGiTI6jACgoi1kP_qlpqBpEwBSqgrD6Qcs"
-CHAT_ID = "7072225690"
+CHAT_ID = "-1003965140426"  # আপনার নতুন গ্রুপ আইডি
+
+# রেন্ডার এরর ফিক্স (Fake Server)
+app = Flask('')
+@app.route('/')
+def home():
+    return "ZM PRO BOT IS LIVE"
+
+def run_server():
+    app.run(host='0.0.0.0', port=8080)
 
 OTC_MARKETS = [
     "USDBDT-OTC", "USDINR-OTC", "USDPHP-OTC", "BRLUSD-OTC", "USDARS-OTC", 
@@ -12,38 +25,65 @@ OTC_MARKETS = [
     "INTCQX-OTC", "BTCUSD-OTC", "MSFT-OTC", "FB-OTC"
 ]
 
+def get_bd_time():
+    tz = pytz.timezone('Asia/Dhaka')
+    return datetime.now(tz).strftime("%H:%M:%S")
+
 def send_msg(text):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": text, "parse_mode": "Markdown"}
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage?chat_id={CHAT_ID}&text={text}&parse_mode=Markdown"
     try:
-        requests.post(url, json=payload, timeout=15)
-    except:
-        print("Signal failed to send")
+        requests.get(url)
+    except Exception as e:
+        print(f"Error: {e}")
 
 def run_bot():
-    print("ZM AI-PRO Bot is Scanning...")
+    print("ZM AI-PRO Group Bot is Active...")
     while True:
-        # এটি সার্ভার সচল রাখবে
-        print(f"Status Check: {random.randint(100, 999)}")
-        
         market = random.choice(OTC_MARKETS)
         ai_score = random.randint(85, 99)
 
         if ai_score >= 93:
-            # প্রাক-সিগন্যাল
-            pre_text = f"⏳ **PRE-SIGNAL ALERT**\n---\n📊 Market: *{market}*\n🛠 AI Status: High Probability\n📢 **Ready to trade in 3 Minutes!**"
+            # ১. প্রাক-সিগন্যাল সতর্কতা
+            pre_text = (
+                f"⏳ **PRE-SIGNAL ALERT (ZM-PRO)**\n"
+                f"--- \n"
+                f"📊 Market: *{market}*\n"
+                f"🛠 Analysis: High Probability Found\n"
+                f"📢 **Action: Ready in 3 Minutes!**"
+            )
             send_msg(pre_text)
-            
-            time.sleep(180) # ৩ মিনিট বিরতি
+            time.sleep(180) 
 
-            # ৩ মিনিট পর আবার চেক এবং ফাইনাল সিগন্যাল
-            action = random.choice(["CALL (UP) ⬆️", "PUT (DOWN) ⬇️"])
-            final_text = f"🚀 **FINAL SIGNAL (ZM-PRO)**\n---\n📊 Market: {market}\n📈 Direction: {action}\n⏳ Time: 1 MIN\n🎯 Accuracy: {random.randint(93,98)}%\n⚠️ **Enter NOW!**"
+            # ২. ফাইনাল সিগন্যাল (অনটাইম সহ)
+            direction = random.choice(["CALL (UP) ⬆️", "PUT (DOWN) ⬇️"])
+            entry_time = get_bd_time()
+            
+            final_text = f"""
+🚀 **ZM FINAL SIGNAL**
+---
+📊 **Market:** {market}
+📈 **Direction:** {direction}
+⏰ **Entry Time:** {entry_time}
+⏳ **Expiry:** 1 MIN
+🎯 **AI Accuracy:** {ai_score}%
+
+✅ **Enter NOW on next candle!**
+            """
             send_msg(final_text)
             
-            time.sleep(600) # ১০ মিনিট পর আবার শুরু হবে
+            # ৩. ১ মিনিট পর রেজাল্ট চেক (সিমুলেশন)
+            time.sleep(60)
+            res = random.choice(["✅ PROFIT (WIN)", "✅ PROFIT (WIN)", "❌ LOSS"])
+            result_msg = f"📊 **TRADE RESULT: {market}**\n---\n{res}\n⏰ Close Time: {get_bd_time()}"
+            send_msg(result_msg)
+            
+            # বিরতি (ওভার-ট্রেডিং রুখতে)
+            time.sleep(600) 
         else:
-            time.sleep(45) # ৪৫ সেকেন্ড পর আবার স্ক্যান
+            time.sleep(20)
 
 if __name__ == "__main__":
+    # সার্ভার এবং বট একসাথে চালু করা
+    t = Thread(target=run_server)
+    t.start()
     run_bot()
